@@ -29,7 +29,7 @@ export class S3Provider {
     key: string,
     file: Buffer,
     contentType: string,
-  ): Promise<string> {
+  ): Promise<void> {
     const command = new PutObjectCommand({
       Bucket: this.bucket,
       Key: key,
@@ -38,20 +38,25 @@ export class S3Provider {
     });
 
     await this.s3Client.send(command);
-    return `${this.configService.get('SERVER_URL')}/api/files/${key}`;
   }
 
-  async getFile(key: string): Promise<Buffer> {
+  async getFile(key: string): Promise<{ buffer: Buffer; contentType: string }> {
     const command = new GetObjectCommand({
       Bucket: this.bucket,
       Key: key,
     });
 
     const response = await this.s3Client.send(command);
-    return Buffer.from(await response.Body.transformToByteArray());
+    const contentType = response.ContentType || 'application/octet-stream';
+    const buffer = Buffer.from(await response.Body.transformToByteArray());
+
+    return {
+      buffer,
+      contentType,
+    };
   }
 
-  async deleteFile(key: string): Promise<void> {
+  async delete(key: string): Promise<void> {
     const command = new DeleteObjectCommand({
       Bucket: this.bucket,
       Key: key,
@@ -61,9 +66,10 @@ export class S3Provider {
   }
 
   // get all the files in the bucket
-  async getAllFiles(): Promise<_Object[]> {
+  async getAllFiles(userId: string): Promise<_Object[]> {
     const command = new ListObjectsCommand({
       Bucket: this.bucket,
+      Prefix: `${userId}/`,
     });
 
     const response = await this.s3Client.send(command);
@@ -71,5 +77,16 @@ export class S3Provider {
       return [];
     }
     return response.Contents;
+  }
+
+  // create folder in the bucket
+  async createFolder(folderName: string): Promise<void> {
+    const command = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: `${folderName}/`,
+      Body: '',
+    });
+
+    await this.s3Client.send(command);
   }
 }
