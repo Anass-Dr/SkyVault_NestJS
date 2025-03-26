@@ -5,7 +5,7 @@ import { Model } from 'mongoose';
 import { FilePermissions } from './schemas/file-permissions.schema';
 import { SharedLinks } from './schemas/shared-links.schema';
 import * as crypto from 'crypto';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from '@/../../src/users/users.service';
 
 @Injectable()
 export class FilesService {
